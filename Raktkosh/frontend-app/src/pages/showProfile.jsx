@@ -1,0 +1,112 @@
+import { Backdrop, Card, CardContent, CircularProgress, Container, Divider, Fab, Grid, Snackbar, Typography } from "@material-ui/core";
+import { AccountCircleRounded, Email, VerifiedUser, Cake, Phone, InvertColors, LocationCity, Edit } from "@material-ui/icons/";
+import { useSelector } from "react-redux";
+import Post from '../components/posts';
+import useStyles from "../styles/pages/profile";
+import useAxios from '../hooks/axios';
+import axios from '../config/axios.config';
+import { useEffect, useState } from "react";
+import { Alert } from "@material-ui/lab";
+import PostEditForm from "../components/profile-edit-form";
+import AddressEditForm from "../components/user-address-form";
+import { useParams } from "react-router";
+
+
+const ShowProfile = props => {
+  const classes = useStyles();
+  const id = useParams().id;
+  const userInfo = useSelector(store => store.user);
+  const [posts, handlePost] = useState([]);
+  const [posterror, handlePostError] = useState({});
+  const [open, handleOpen] = useState(false);
+  const [openAddress, handleAddressForm] = useState(false);
+
+  const [response, error, waiting] = useAxios(`/account/profile/${id}`);
+  const [address, errorAdd, waitingAdd] = useAxios(`/user/address/${id}`);
+
+  useEffect(() => {
+    if (response) {
+      axios.get(`/post/byUser/${response.id}`)
+        .then(res => {
+          handlePost(res.data);
+        })
+        .catch(error => {
+          if (!error.response) {
+            handlePostError(({ open: true, severity: "error", message: "Network Error" }));
+          }
+          else {
+            handlePostError(({ open: true, severity: "error", message: error.response.data.message }));
+          }
+        });
+    }
+  }, [response]);
+
+  return (
+    <Container maxWidth={"lg"}>
+      <Backdrop className={classes.backdrop} open={waiting}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+      <Snackbar open={posterror.open} autoHideDuration={6000} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={posterror.severity}>
+          {posterror.message}
+        </Alert>
+      </Snackbar>
+
+      <PostEditForm open={open} handleClose={() => handleOpen(false)} id={userInfo.id} />
+
+      <AddressEditForm open={openAddress} handleClose={() => handleAddressForm(false)} id={userInfo.id} />
+      
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Card className={classes.content}>
+            <CardContent>
+              <Typography className={classes.title} component="h1">
+                <VerifiedUser fontSize="large" /> &nbsp; {response?.fullname}
+                
+              </Typography>
+              <Divider />
+              <Typography component="h6" className={classes.typo}>
+                <AccountCircleRounded fontSize="small" /> &nbsp; {response?.username}
+              </Typography>
+              <Typography component="h6" className={classes.typo}>
+                <Cake fontSize="small" /> &nbsp; {response?.dob}
+              </Typography>
+              <Typography component="h6" className={classes.typo}>
+                <Phone fontSize="small" /> &nbsp; {response?.mobile || "N/A"}
+              </Typography>
+              <Typography component="h6" className={classes.typo}>
+                <Email fontSize="small" /> &nbsp; {response?.email}
+              </Typography>
+              <Typography component="h6" className={classes.typo}>
+                <InvertColors fontSize="small" /> &nbsp; {response?.bloodType || "N/A"} {response?.antigen === "POSITIVE" ? "+" : "-"}
+              </Typography>
+              <Typography component="h6" className={classes.typo}>
+                <LocationCity fontSize="small" /> &nbsp; {
+                  !address
+                  ? "N/A"
+                  : `${address?.locality}, ${address?.city} - ${address?.zip} ${address?.state}`
+                }
+                
+               
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      <Grid container spacing={2}>
+        {
+          posts.length !== 0 &&
+          posts.map((post, idx) => (
+            <Grid item xs={12} sm={6} md={4} className={classes.postContainer} key={idx}>
+              <Post deletable={id === userInfo.id} {...post} />
+              
+              
+            </Grid>
+          ))
+        }
+      </Grid>
+    </Container>
+  );
+};
+
+export default ShowProfile;

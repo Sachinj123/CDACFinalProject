@@ -1,0 +1,11 @@
+{
+  "title": "Raktkosh",
+  "basename": "/",
+  "api": "http://localhost:3001/api",
+  "url": "#",
+  "developers": [
+    "Sachin Jadhav",
+    "Nilesh Saste",
+    "Siddesh Naik"
+  ]
+}
